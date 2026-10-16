@@ -1,0 +1,5 @@
+# Python cache
+__pycache__/
+
+# All data stays local: the weekly plan, rotating chores, names, comments and edit history
+data/

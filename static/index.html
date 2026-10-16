@@ -1,0 +1,932 @@
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Daglige gjøremål</title>
+  <style>
+    :root {
+      --bg: #f5f6f8; --card: #fff; --text: #1d2330; --muted: #6b7280;
+      --line: #e5e7eb; --accent: #2563eb; --done: #16a34a; --rot: #9333ea; --danger: #dc2626;
+      --warn: #d97706;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #111418; --card: #1b2028; --text: #e6e8eb; --muted: #9aa3af;
+              --line: #2b313b; --accent: #60a5fa; --done: #4ade80; --rot: #c084fc; --danger: #ef4444; --warn: #d97706; }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text);
+           font: 16px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    button, input, select { font: inherit; }
+    [hidden] { display: none !important; }
+    main { max-width: 640px; margin: 0 auto; padding: 12px 16px 48px; }
+    main.wide { max-width: 1180px; }
+
+    .topbar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .menuBtn { border: 1px solid var(--line); background: var(--card); color: var(--text);
+               border-radius: 10px; padding: 8px 12px; cursor: pointer; }
+    .viewSwitch { margin-left: auto; display: flex; background: var(--card); border: 1px solid var(--line);
+                  border-radius: 10px; padding: 3px; }
+    .viewSwitch button { border: 0; background: none; color: var(--text); padding: 6px 16px;
+                         border-radius: 8px; cursor: pointer; }
+    .viewSwitch button.active { background: var(--text); color: var(--bg); }
+
+    header { display: flex; align-items: center; gap: 8px; }
+    header h1 { flex: 1; margin: 0; font-size: 1.5rem; text-align: center; }
+    header small { display: block; font-size: .85rem; font-weight: 400; color: var(--muted); }
+    .nav { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line);
+           background: var(--card); color: var(--text); font-size: 1.2rem; cursor: pointer; }
+    .today { margin-left: auto; border: 1px solid var(--accent); background: var(--accent); color: #fff;
+             border-radius: 10px; padding: 8px 14px; cursor: pointer; font-weight: 600; white-space: nowrap; }
+    .today:disabled { background: var(--card); color: var(--muted); border-color: var(--line); cursor: default; font-weight: 400; }
+    .today + .viewSwitch { margin-left: 0; }
+
+    .tabs { display: flex; gap: 6px; margin: 18px auto 12px; background: var(--card); max-width: 608px;
+            padding: 4px; border-radius: 12px; border: 1px solid var(--line); }
+    .tabs button { flex: 1; padding: 10px 0; border: 0; border-radius: 9px; background: none;
+                   color: var(--text); cursor: pointer; }
+    .tabs button.active { background: var(--accent); color: #fff; }
+    .tabs .count { font-size: .8rem; opacity: .8; margin-left: 4px; }
+
+    .progress { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
+    .progress div { height: 100%; background: var(--done); width: 0; transition: width .25s; }
+    .status { color: var(--muted); font-size: .9rem; margin: 6px 0 14px; text-align: right; }
+
+    ul.tasks { list-style: none; margin: 0; padding: 0; background: var(--card);
+               border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+    ul.tasks li + li { border-top: 1px solid var(--line); }
+    ul.tasks label { display: flex; gap: 12px; padding: 14px; cursor: pointer; align-items: flex-start; }
+    input[type=checkbox] { width: 22px; height: 22px; margin: 1px 0 0; flex-shrink: 0;
+                           accent-color: var(--done); cursor: pointer; }
+    li.checked .text { color: var(--muted); text-decoration: line-through; }
+    li.rot { box-shadow: inset 4px 0 0 var(--rot); }
+    .badge { display: inline-block; font-size: .72rem; font-weight: 600; color: var(--rot);
+             border: 1px solid var(--rot); border-radius: 99px; padding: 0 7px; margin-right: 6px; }
+    .taskRow { display: flex; align-items: flex-start; }
+    .taskRow label { flex: 1; }
+    .cBtn { border: 0; background: none; cursor: pointer; padding: 14px 14px 14px 4px;
+            font-size: 1.05rem; opacity: .35; }
+    .cBtn:hover, .cBtn.has { opacity: 1; }
+    .note { margin: -6px 14px 12px 48px; font-size: .88rem; color: var(--muted); white-space: pre-wrap; }
+    .st { display: inline-block; font-size: .72rem; font-weight: 600; border-radius: 99px;
+          padding: 0 7px; margin-right: 6px; color: #fff; }
+    .st.partly { background: var(--warn); }
+    .st.not { background: var(--danger); }
+    .editor { padding: 0 14px 14px 48px; display: grid; gap: 8px; }
+    .editor textarea { width: 100%; min-height: 64px; padding: 8px 10px; border: 1px solid var(--line);
+                       border-radius: 8px; background: var(--bg); color: var(--text); font: inherit; resize: vertical; }
+    .chips, .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .actions { justify-content: flex-end; }
+    .editor button { padding: 6px 12px; border-radius: 99px; border: 1px solid var(--line);
+                     background: var(--card); color: var(--text); cursor: pointer; font-size: .88rem; }
+    .chips button.on[data-s=partly] { background: var(--warn); border-color: var(--warn); color: #fff; }
+    .chips button.on[data-s=not] { background: var(--danger); border-color: var(--danger); color: #fff; }
+    .editor .save { background: var(--accent); border-color: var(--accent); color: #fff; }
+    li.empty { padding: 14px; color: var(--muted); }
+    li.empty a { color: var(--rot); cursor: pointer; }
+
+    h2 { font-size: 1rem; margin: 28px 0 8px; color: var(--muted); }
+    .allDone { text-align: center; padding: 16px; color: var(--done); font-weight: 600; display: none; }
+
+    /* Name on shift */
+    .shiftName { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; }
+    .shiftName label { color: var(--muted); font-size: .9rem; white-space: nowrap; }
+    .nameInput { flex: 1; min-width: 0; padding: 8px 10px; border: 1px solid var(--line);
+                 border-radius: 8px; background: var(--card); color: var(--text); width: 100%; }
+    .shiftName .saved { color: var(--done); font-size: .85rem; opacity: 0; transition: opacity .3s; }
+    .shiftName .saved.show { opacity: 1; }
+
+    /* Week view */
+    .weekGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(330px, 100%), 1fr)); gap: 14px; align-items: start; }
+    .dayCard { background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+    .dayCard.isToday { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+    .dayHead { display: flex; align-items: center; gap: 8px; padding: 10px 12px 6px; }
+    .dayTitle { flex: 1; border: 0; background: none; color: var(--text); cursor: pointer; text-align: left;
+                font-weight: 700; padding: 0; }
+    .dayTitle small { font-weight: 400; color: var(--muted); margin-left: 4px; }
+    .dayTitle .todayTag { font-size: .72rem; font-weight: 600; color: #fff; background: var(--accent);
+                          border-radius: 99px; padding: 1px 7px; margin-left: 6px; }
+    .dayCount { font-size: .85rem; color: var(--muted); }
+    .dayCard .nameInput { margin: 0 12px 8px; width: calc(100% - 24px); padding: 6px 9px; font-size: .9rem; }
+    .dayCard .progress { height: 4px; border-radius: 0; }
+    .dayCard ul.tasks { border: 0; border-radius: 0; }
+    .dayCard ul.tasks label { padding: 9px 12px; gap: 10px; font-size: .92rem; }
+    .dayCard .cBtn { padding: 9px 12px 9px 2px; font-size: .95rem; }
+    .dayCard input[type=checkbox] { width: 19px; height: 19px; }
+    .dayCard .note { margin: -4px 12px 9px 41px; font-size: .84rem; }
+    .dayCard .editor { padding: 0 12px 12px 41px; }
+
+    /* Sidebar */
+    aside { position: fixed; top: 0; left: 0; bottom: 0; width: min(340px, 88vw); z-index: 10;
+            background: var(--card); border-right: 1px solid var(--line); padding: 16px;
+            overflow-y: auto; transform: translateX(-100%); transition: transform .2s; }
+    aside.open { transform: none; }
+    .backdrop { position: fixed; inset: 0; background: #0006; z-index: 9; display: none; }
+    .backdrop.open { display: block; }
+    .sideHead { display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
+    .sideHead button { border: 1px solid var(--line); background: none; color: var(--muted); font-size: 1rem;
+                       width: 32px; height: 32px; border-radius: 8px; cursor: pointer; }
+    aside details { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+    aside summary { font-weight: 700; font-size: 1.05rem; cursor: pointer; list-style: none;
+                    display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    aside summary::-webkit-details-marker { display: none; }
+    aside summary::after { content: "▾"; color: var(--muted); }
+    aside details:not([open]) summary::after { transform: rotate(-90deg); }
+    #pdfForm button { background: var(--accent); }
+    aside p.help { margin: 0 0 14px; color: var(--muted); font-size: .88rem; }
+    form { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; }
+    form label { display: grid; gap: 4px; font-size: .88rem; color: var(--muted); }
+    form input, form select { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
+                              background: var(--bg); color: var(--text); width: 100%; }
+    form button { padding: 10px; border: 0; border-radius: 8px; background: var(--rot);
+                  color: #fff; font-weight: 600; cursor: pointer; }
+    .seasons { border: 0; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .seasons legend { font-size: .88rem; color: var(--muted); padding: 0; margin-bottom: 4px; }
+    .seasons label { display: flex; flex-direction: row; align-items: center; gap: 8px;
+                     color: var(--text); font-size: .95rem; cursor: pointer; }
+    .seasons input { width: 18px; height: 18px; margin: 0; padding: 0; }
+    ul.pool { list-style: none; padding: 0; margin: 10px 0 0; }
+    ul.pool li { display: flex; gap: 8px; align-items: flex-start; padding: 10px 0;
+                 border-bottom: 1px solid var(--line); }
+    ul.pool .info { flex: 1; }
+    ul.pool small { display: block; color: var(--muted); font-size: .8rem; }
+    ul.pool button { border: 0; background: none; color: var(--danger); cursor: pointer; font-size: 1.1rem; padding: 0 2px; }
+    ul.pool button.edit { font-size: 1rem; opacity: .7; }
+    ul.pool button.edit:hover { opacity: 1; }
+    ul.pool li.editing { background: color-mix(in srgb, var(--rot) 12%, transparent); border-radius: 8px;
+                         margin: 0 -6px; padding: 10px 6px; }
+    #addForm.editing { border-color: var(--rot); box-shadow: 0 0 0 1px var(--rot); }
+    #addForm .cancelEdit { background: none; color: var(--muted); border: 1px solid var(--line); font-weight: 400; }
+    .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .editRow { display: flex; gap: 4px; align-items: flex-start; }
+    .editRow textarea { flex: 1; min-height: 60px; max-height: 260px; padding: 6px 8px; border: 1px solid var(--line);
+                        border-radius: 8px; background: var(--bg); color: var(--text); font: inherit; font-size: .88rem;
+                        resize: vertical; field-sizing: content; }
+    #editForm .editRow button { background: none; color: var(--danger); padding: 4px; font-size: 1rem; }
+    #editForm .ghost { background: none; color: var(--accent); border: 1px dashed var(--line); font-weight: 400; }
+    #editForm .save { background: var(--accent); }
+    .editMsg { color: var(--done); font-size: .85rem; text-align: center; min-height: 1.2em; }
+    ul.history { list-style: none; padding: 0; margin: 6px 0 0; }
+    ul.history li { padding: 9px 0; border-bottom: 1px solid var(--line); font-size: .86rem; }
+    ul.history .hHead { display: flex; gap: 6px; align-items: baseline; }
+    ul.history .hHead a { flex: 1; font-weight: 600; color: var(--text); cursor: pointer; }
+    ul.history small { color: var(--muted); }
+    ul.history button { border: 1px solid var(--line); background: var(--card); color: var(--text);
+                        border-radius: 99px; padding: 2px 10px; cursor: pointer; font-size: .8rem; }
+    .diff div { display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-top: 3px; }
+    .diff .del { color: var(--danger); text-decoration: line-through; }
+    .diff .add { color: var(--done); }
+    .resetBtn { margin-top: 10px; width: 100%; padding: 8px; border: 1px solid var(--line); border-radius: 8px;
+                background: none; color: var(--muted); cursor: pointer; font-size: .85rem; }
+    ol.upcoming { margin: 6px 0 0; padding-left: 20px; font-size: .9rem; }
+    ol.upcoming small { color: var(--muted); }
+
+    /* Wide screens: sidebar is docked, and can be collapsed */
+    @media (min-width: 1000px) {
+      aside { transform: none; }
+      .backdrop { display: none !important; }
+      body:not(.sideCollapsed) .menuBtn { display: none; }
+      body:not(.sideCollapsed) main { margin-left: max(356px, calc(50vw - 320px)); }
+      body:not(.sideCollapsed) main.wide { margin-left: 356px; margin-right: 16px; }
+      body.sideCollapsed aside { transform: translateX(-100%); }
+    }
+
+    /* ---------- Printable weeks: one A4 portrait page each ---------- */
+    #print { display: none; }
+    #print.measure { display: block; position: absolute; left: -99999px; top: 0; }
+    .week { width: 194mm; background: #fff; color: #1e293b; font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+            -webkit-print-color-adjust: exact; print-color-adjust: exact;
+            --navy: #1f3a5f; --navy-soft: #e8eef5; --zebra: #f6f8fb; --rule: #c3cfdd; --teal: #0f766e; }
+    .wk { font-size: var(--fs, 8pt); line-height: 1.25; }
+    .wkHead { display: flex; justify-content: space-between; align-items: flex-end;
+              border-bottom: .8mm solid var(--navy); padding-bottom: 1.5mm; margin-bottom: 1.5mm; }
+    .wkHead h1 { margin: 0; font-size: 2.1em; color: var(--navy); letter-spacing: -.01em; }
+    .wkHead h1 small { font-size: .55em; font-weight: 400; color: #475569; margin-left: 2mm; }
+    .wkHead .range { font-size: 1.15em; font-weight: 600; color: var(--navy); }
+    .wkSub { color: #475569; margin-bottom: 2mm; display: flex; justify-content: space-between; gap: 4mm; }
+    .wkSub .stamp { white-space: nowrap; color: #64748b; }
+    .wkSub b { color: var(--teal); }
+    .week table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .week th, .week td { border: .25mm solid var(--rule); vertical-align: top; padding: 1.1mm 1.3mm; text-align: left; }
+    .week thead th { background: var(--navy); color: #fff; font-size: 1.1em; letter-spacing: .02em;
+                     border-color: var(--navy); padding: 1.4mm 1.3mm; }
+    .week col.dc { width: 15mm; } .week col.c-Dag { width: 35%; } .week col.c-Kveld { width: 37%; }
+    .week tbody th { background: var(--navy-soft); color: var(--navy); }
+    .week tbody th small { display: block; font-weight: 400; color: #475569; }
+    .week tbody tr:nth-child(even) td { background: var(--zebra); }
+    .week .nm { display: flex; gap: 1.5mm; align-items: flex-end; color: #64748b; font-size: .9em;
+                margin-bottom: 1mm; }
+    .week .nm span { flex: 1; border-bottom: .25mm solid #94a3b8; min-height: 1.3em; color: #1e293b; font-size: 1.1em; }
+    .week .t { display: flex; gap: 1.5mm; align-items: flex-end; padding: .9mm 0;
+               border-top: .15mm dashed var(--rule); }
+    .week .t span { flex: 1; white-space: pre-line; }
+    .week .t.r span { border-left: .9mm solid var(--teal); padding-left: 1.2mm; }
+    .week .t.r b { color: var(--teal); }
+    .week i.sg { flex: none; position: relative; display: inline-block; width: 5.2em; height: 2.4em;
+                 border: .3mm solid var(--navy); border-radius: .8mm; background: #fff; }
+    .week i.sg::before { content: "Sign."; position: absolute; top: .15em; left: .3em; font-size: .6em;
+                         font-style: normal; color: #94a3b8; }
+    .week .foot { display: grid; grid-template-columns: 1fr 1fr; gap: 2mm; margin-top: 2mm; }
+    .week .box { border: .25mm solid var(--rule); border-radius: 1mm; padding: 1.3mm 1.6mm; background: var(--navy-soft); }
+    .week .box h4 { margin: 0 0 1mm; color: var(--navy); font-size: 1em; }
+    .week .behov { display: flex; flex-wrap: wrap; gap: 1mm 3mm; }
+    .week .behov span { display: inline-flex; gap: 1mm; align-items: center; }
+    .week .behov i.sg { width: 3.6em; height: 1.8em; }
+    .week .behov i.sg::before { content: ""; }
+    .week .lines { background: #fff; height: 12mm;
+                   background-image: repeating-linear-gradient(#fff 0 3.7mm, #cbd5e1 3.7mm 3.95mm); }
+
+    @media print {
+      @page { size: A4 portrait; margin: 8mm; }
+      html, body { background: #fff !important; margin: 0; }
+      body > *:not(#print) { display: none !important; }
+      #print { display: block; }
+      .week { height: 280mm; overflow: hidden; break-after: page; page-break-after: always; }
+      .week:last-child { break-after: auto; page-break-after: auto; }
+    }
+  </style>
+</head>
+<body>
+<aside id="sidebar">
+  <div class="sideHead">Meny <button id="closeMenu" title="Skjul meny" aria-label="Skjul meny">«</button></div>
+
+  <details open>
+    <summary>Skriv ut / PDF</summary>
+    <p class="help">Lager ett stående A4-ark per uke med signaturfelt. Velg <b>«Lagre som PDF»</b> i utskriftsvinduet.</p>
+    <form id="pdfForm">
+      <label>Fra uke
+        <select id="pWeek"></select>
+      </label>
+      <label>Antall uker
+        <input id="pCount" type="number" min="1" max="26" value="1" required>
+      </label>
+      <button>Lag PDF</button>
+    </form>
+  </details>
+
+  <details>
+    <summary>Rediger faste gjøremål</summary>
+    <p class="help">Endre, legg til eller slett faste gjøremål. Hver rad får én signatur på utskriften. De 10 siste endringene lagres, så du kan angre.</p>
+    <form id="editForm">
+      <div class="pair">
+        <label>Dag <select id="eDay"></select></label>
+        <label id="eShiftWrap">Vakt <select id="eShift"></select></label>
+      </div>
+      <div id="eRows" style="display:grid;gap:6px"></div>
+      <button type="button" class="ghost" id="eAdd">+ Legg til rad</button>
+      <button class="save">Lagre endringer</button>
+      <div class="editMsg" id="editMsg"></div>
+    </form>
+
+    <h2>Siste endringer</h2>
+    <ul class="history" id="history"></ul>
+    <button class="resetBtn" id="eReset">Tilbakestill alt til original (CSV-fila)</button>
+  </details>
+
+  <details open>
+    <summary>Rullerende gjøremål</summary>
+    <p class="help">Hver <b>tirsdag dag</b> får ett gjøremål fra denne lista. Gjøremål med flere ganger i året kommer oftere.</p>
+
+    <form id="addForm">
+      <label>Gjøremål
+        <input id="fText" required placeholder="F.eks. Vaske vinduer i 1. etasje">
+      </label>
+      <label>Ca. ganger i året
+        <input id="fTimes" type="number" min="1" max="52" value="4" required>
+      </label>
+      <fieldset class="seasons" id="fSeasons">
+        <legend>Sesong</legend>
+        <label><input type="checkbox" value="spring" checked> Vår</label>
+        <label><input type="checkbox" value="summer" checked> Sommer</label>
+        <label><input type="checkbox" value="fall" checked> Høst</label>
+        <label><input type="checkbox" value="winter" checked> Vinter</label>
+      </fieldset>
+      <button id="fSubmit">Legg til</button>
+      <button type="button" class="cancelEdit" id="fCancel" hidden>Avbryt redigering</button>
+    </form>
+
+    <h2>Neste tirsdager</h2>
+    <ol class="upcoming" id="upcoming"></ol>
+
+    <h2>Alle rullerende (<span id="poolCount">0</span>)</h2>
+    <ul class="pool" id="pool"></ul>
+    <p class="help">Vår = mars–mai, sommer = juni–aug., høst = sep.–nov., vinter = des.–feb.</p>
+  </details>
+</aside>
+<div class="backdrop" id="backdrop"></div>
+
+<main id="main">
+  <div class="topbar">
+    <button class="menuBtn" id="openMenu">☰ Meny</button>
+    <button class="today" id="today">↺ I dag</button>
+    <div class="viewSwitch" id="viewSwitch">
+      <button data-view="day">Dag</button><button data-view="week">Uke</button>
+    </div>
+  </div>
+  <header>
+    <button class="nav" id="prev" aria-label="Forrige">‹</button>
+    <h1><span id="dayName">…</span><small id="date"></small></h1>
+    <button class="nav" id="next" aria-label="Neste">›</button>
+  </header>
+
+  <div class="tabs" id="tabs"></div>
+
+  <div id="dayView">
+    <div class="shiftName">
+      <label for="shiftName" id="shiftNameLabel">Navn på vakt</label>
+      <input class="nameInput" id="shiftName" placeholder="Skriv navnet ditt" autocomplete="name">
+      <span class="saved" id="nameSaved">Lagret ✓</span>
+    </div>
+
+    <div class="progress"><div id="bar"></div></div>
+    <div class="status" id="status"></div>
+
+    <ul class="tasks" id="list"></ul>
+    <div class="allDone" id="allDone">Alt ferdig for denne vakta! 🎉</div>
+
+    <h2>Ved behov</h2>
+    <ul class="tasks" id="extra"></ul>
+  </div>
+
+  <div id="weekView" hidden>
+    <div class="weekGrid" id="weekGrid"></div>
+  </div>
+</main>
+
+<div id="print"></div>
+
+<script>
+const DAYS = ["Søndag", "Mandag", "Tirsdag", "Onsdag", "Torsdag", "Fredag", "Lørdag"]; // JS getDay() order
+const SHIFTS = ["Dag", "Kveld", "Natt"];
+const ROT_DAY = 2, ROT_SHIFT = "Dag"; // the rotating slot: Tuesday day shift
+const SEASON_NAMES = { spring: "vår", summer: "sommer", fall: "høst", winter: "vinter" };
+const STATUS_NAMES = { partly: "Delvis gjort", not: "Ikke gjort" };
+const SHIFT_WORDS = { Dag: "dagvakt", Kveld: "kveldsvakt", Natt: "nattevakt" };
+
+const seasonLabel = c => {
+  if (c.seasons.length === 4) return "Hele året";
+  const s = c.seasons.map(x => SEASON_NAMES[x]).join(", ");
+  return s[0].toUpperCase() + s.slice(1);
+};
+
+let plan, chores = [], names = {}, editing = null;
+let date = new Date(), shift = currentShift(), view = pref("view") || "day";
+const commentsByDate = {}; // dateKey -> { taskId: {comment, status, task} }
+
+function currentShift() {
+  const h = new Date().getHours();
+  return h >= 7 && h < 15 ? "Dag" : h >= 15 && h < 23 ? "Kveld" : "Natt";
+}
+
+const $ = id => document.getElementById(id);
+const dateKey = d => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+const fmt = d => d.toLocaleDateString("no-NO", { day: "numeric", month: "short" });
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+const mondayOf = d => addDays(d, -((d.getDay() + 6) % 7));
+const weekDays = d => [...Array(7)].map((_, i) => addDays(mondayOf(d), i));
+const isToday = d => dateKey(d) === dateKey(new Date());
+const visibleDates = () => view === "week" ? weekDays(date) : [date];
+
+function isoWeek(d) {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7));
+  return Math.ceil(((t - Date.UTC(t.getUTCFullYear(), 0, 1)) / 864e5 + 1) / 7);
+}
+
+// Small per-browser preferences (view, collapsed sidebar)
+function pref(k, v) {
+  try { if (v === undefined) return localStorage.getItem("pref-" + k); localStorage.setItem("pref-" + k, v); } catch {}
+}
+
+function loadChecks(d) {
+  try { return JSON.parse(localStorage.getItem("todo-" + dateKey(d))) || {}; } catch { return {}; }
+}
+function saveChecks(d, checks) {
+  try { localStorage.setItem("todo-" + dateKey(d), JSON.stringify(checks)); } catch {}
+}
+
+/* ---------- Rotating chore scheduling ---------- */
+
+// Spring = Mar–May, summer = Jun–Aug, fall = Sep–Nov, winter = Dec–Feb
+const seasonOf = d => ["winter", "winter", "spring", "spring", "spring", "summer",
+                       "summer", "summer", "fall", "fall", "fall", "winter"][d.getMonth()];
+
+function tuesdaysOfYear(year) {
+  const d = new Date(year, 0, 1);
+  while (d.getDay() !== ROT_DAY) d.setDate(d.getDate() + 1);
+  const out = [];
+  for (; d.getFullYear() === year; d.setDate(d.getDate() + 7)) out.push(new Date(d));
+  return out;
+}
+
+// Smooth weighted round-robin over the year's Tuesdays. Each chore's weight is how
+// often it should come up per eligible Tuesday, so seasonal chores compete fairly
+// within their own seasons. Returns { dateKey: chore }.
+function scheduleYear(year) {
+  const credit = {}, result = {};
+  for (const t of tuesdaysOfYear(year)) {
+    const season = seasonOf(t);
+    const eligible = chores.filter(c => c.seasons.includes(season));
+    if (!eligible.length) continue;
+    let total = 0, best = null;
+    for (const c of eligible) {
+      const w = c.timesPerYear / (13 * c.seasons.length); // ~13 Tuesdays per season
+      credit[c.id] = (credit[c.id] || 0) + w;
+      total += w;
+      if (!best || credit[c.id] > credit[best.id]) best = c;
+    }
+    credit[best.id] -= total;
+    result[dateKey(t)] = best;
+  }
+  return result;
+}
+
+const scheduleCache = {};
+function choreFor(d) {
+  const y = d.getFullYear();
+  scheduleCache[y] ??= scheduleYear(y);
+  return scheduleCache[y][dateKey(d)] || null;
+}
+function resetSchedule() { for (const k in scheduleCache) delete scheduleCache[k]; }
+
+/* ---------- Tasks for a day/shift ---------- */
+
+function tasksFor(d, s) {
+  const tasks = plan.days[DAYS[d.getDay()]][s].map((text, i) => ({ id: s + i, text }));
+  if (d.getDay() === ROT_DAY && s === ROT_SHIFT) {
+    const c = choreFor(d);
+    tasks.push(c ? { id: "rot-" + c.id, text: c.text, rot: true } : { empty: true });
+  }
+  return tasks;
+}
+const realTasks = (d, s) => tasksFor(d, s).filter(t => !t.empty);
+
+function renderList(el, tasks, d) {
+  const checks = loadChecks(d), comments = commentsByDate[dateKey(d)] || {};
+  el.innerHTML = "";
+  for (const task of tasks) {
+    const li = document.createElement("li");
+    if (task.empty) {
+      li.className = "empty";
+      li.innerHTML = `Ingen rullerende gjøremål ennå – <a>legg til i menyen</a>`;
+      li.querySelector("a").onclick = openMenu;
+      el.appendChild(li);
+      continue;
+    }
+    const note = comments[task.id], editKey = dateKey(d) + "|" + task.id;
+    li.className = (checks[task.id] ? "checked " : "") + (task.rot ? "rot" : "");
+    li.innerHTML = `<div class="taskRow"><label><input type="checkbox"><span>${task.rot ? '<span class="badge">Rullerende</span>' : ""}<span class="text"></span></span></label><button class="cBtn${note ? " has" : ""}" title="Kommentar">💬</button></div>`;
+    li.querySelector(".text").textContent = task.text;
+    if (note) {
+      const div = document.createElement("div");
+      div.className = "note";
+      if (note.status) div.innerHTML = `<span class="st ${note.status}">${STATUS_NAMES[note.status]}</span>`;
+      div.append(note.comment);
+      li.appendChild(div);
+    }
+    const box = li.querySelector("input");
+    box.checked = !!checks[task.id];
+    box.onchange = () => {
+      const c = loadChecks(d);
+      if (box.checked) c[task.id] = true; else delete c[task.id];
+      saveChecks(d, c);
+      render();
+    };
+    li.querySelector(".cBtn").onclick = () => { editing = editing === editKey ? null : editKey; render(); };
+    if (editing === editKey) li.appendChild(commentEditor(task, note, d));
+    el.appendChild(li);
+  }
+}
+
+function commentEditor(task, note, d) {
+  let status = note?.status || null;
+  const ed = document.createElement("div");
+  ed.className = "editor";
+  ed.innerHTML = `
+    <div class="chips"><button data-s="partly">Delvis gjort</button><button data-s="not">Ikke gjort</button></div>
+    <textarea placeholder="Hva ble gjort, eller hvorfor ble det ikke gjort?"></textarea>
+    <div class="actions">${note ? '<button class="del">Fjern</button>' : ""}<button class="cancel">Avbryt</button><button class="save">Lagre</button></div>`;
+  const area = ed.querySelector("textarea");
+  area.value = note?.comment || "";
+  const chips = ed.querySelectorAll(".chips button");
+  const paint = () => chips.forEach(b => b.classList.toggle("on", b.dataset.s === status));
+  chips.forEach(b => b.onclick = () => { status = status === b.dataset.s ? null : b.dataset.s; paint(); });
+  paint();
+  ed.querySelector(".cancel").onclick = () => { editing = null; render(); };
+  ed.querySelector(".save").onclick = () => saveComment(d, task, area.value, status);
+  ed.querySelector(".del")?.addEventListener("click", () => saveComment(d, task, "", null));
+  setTimeout(() => area.focus());
+  return ed;
+}
+
+async function saveComment(d, task, comment, status) {
+  const r = await fetch("/api/comments", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ date: dateKey(d), taskId: task.id, task: task.text, comment, status }),
+  });
+  if (!r.ok) return alert("Kunne ikke lagre kommentaren – prøv igjen.");
+  commentsByDate[dateKey(d)] = await r.json();
+  editing = null;
+  render();
+}
+
+async function loadComments() {
+  const keys = visibleDates().map(dateKey);
+  await Promise.all(keys.map(async k => {
+    commentsByDate[k] = await fetch("/api/comments?date=" + encodeURIComponent(k)).then(r => r.json());
+  }));
+  render();
+}
+
+async function saveName(d, s, name) {
+  const r = await fetch("/api/names", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ date: dateKey(d), shift: s, name }),
+  });
+  if (!r.ok) { alert("Kunne ikke lagre navnet – prøv igjen."); return false; }
+  names = await r.json();
+  return true;
+}
+
+/* ---------- Rendering ---------- */
+
+function render() {
+  const dates = visibleDates();
+  $("main").classList.toggle("wide", view === "week");
+  $("dayView").hidden = view !== "day";
+  $("weekView").hidden = view !== "week";
+  document.querySelectorAll("#viewSwitch button").forEach(b => b.classList.toggle("active", b.dataset.view === view));
+
+  // Title
+  if (view === "day") {
+    const day = DAYS[date.getDay()];
+    $("dayName").textContent = isToday(date) ? `I dag – ${day}` : day;
+    $("date").textContent = date.toLocaleDateString("no-NO", { day: "numeric", month: "long", year: "numeric" });
+    $("today").textContent = "↺ I dag";
+    $("today").disabled = isToday(date);
+    $("today").title = isToday(date) ? "Du ser allerede på i dag" : "Tilbake til i dag";
+  } else {
+    const thisWeek = dateKey(mondayOf(date)) === dateKey(mondayOf(new Date()));
+    $("dayName").textContent = `Uke ${isoWeek(date)}` + (thisWeek ? " – denne uka" : "");
+    $("date").textContent = `${fmt(dates[0])} – ${dates[6].toLocaleDateString("no-NO", { day: "numeric", month: "short", year: "numeric" })}`;
+    $("today").textContent = "↺ Denne uka";
+    $("today").disabled = thisWeek;
+    $("today").title = thisWeek ? "Du ser allerede på denne uka" : "Tilbake til denne uka";
+  }
+
+  // Shift tabs, counting over all visible days
+  $("tabs").innerHTML = "";
+  for (const s of SHIFTS) {
+    let done = 0, total = 0;
+    for (const d of dates) {
+      const ts = realTasks(d, s), checks = loadChecks(d);
+      total += ts.length;
+      done += ts.filter(t => checks[t.id]).length;
+    }
+    const b = document.createElement("button");
+    b.className = s === shift ? "active" : "";
+    b.innerHTML = `${s}<span class="count">${done}/${total}</span>`;
+    b.onclick = () => { shift = s; editing = null; render(); };
+    $("tabs").appendChild(b);
+  }
+
+  view === "day" ? renderDay() : renderWeek();
+}
+
+function renderDay() {
+  const checks = loadChecks(date);
+  $("shiftNameLabel").textContent = "Navn på " + SHIFT_WORDS[shift];
+  if (document.activeElement !== $("shiftName")) $("shiftName").value = names[dateKey(date)]?.[shift] || "";
+
+  const tasks = tasksFor(date, shift), ts = tasks.filter(t => !t.empty);
+  const done = ts.filter(t => checks[t.id]).length;
+  $("bar").style.width = (ts.length ? done / ts.length * 100 : 0) + "%";
+  $("status").textContent = `${done} av ${ts.length} gjort`;
+  $("allDone").style.display = ts.length && done === ts.length ? "block" : "none";
+
+  renderList($("list"), tasks, date);
+  renderList($("extra"), plan.asNeeded.map((text, i) => ({ id: "behov" + i, text })), date);
+}
+
+function renderWeek() {
+  const grid = $("weekGrid");
+  grid.innerHTML = "";
+  for (const d of weekDays(date)) {
+    const tasks = tasksFor(d, shift), ts = tasks.filter(t => !t.empty), checks = loadChecks(d);
+    const done = ts.filter(t => checks[t.id]).length;
+    const card = document.createElement("section");
+    card.className = "dayCard" + (isToday(d) ? " isToday" : "");
+    card.innerHTML = `
+      <div class="dayHead">
+        <button class="dayTitle" title="Åpne dagen">${DAYS[d.getDay()]}<small>${d.getDate()}.${d.getMonth() + 1}.</small>${isToday(d) ? '<span class="todayTag">I dag</span>' : ""}</button>
+        <span class="dayCount">${done}/${ts.length}</span>
+      </div>
+      <input class="nameInput" placeholder="Navn på ${SHIFT_WORDS[shift]}">
+      <div class="progress"><div style="width:${ts.length ? done / ts.length * 100 : 0}%"></div></div>
+      <ul class="tasks"></ul>`;
+    const input = card.querySelector(".nameInput");
+    input.value = names[dateKey(d)]?.[shift] || "";
+    input.onchange = () => saveName(d, shift, input.value);
+    input.onkeydown = e => { if (e.key === "Enter") input.blur(); };
+    card.querySelector(".dayTitle").onclick = () => { view = "day"; pref("view", view); goTo(d); };
+    renderList(card.querySelector("ul"), tasks, d);
+    grid.appendChild(card);
+  }
+}
+
+/* ---------- Sidebar ---------- */
+
+function renderSidebar() {
+  // Next 6 Tuesdays from today
+  $("upcoming").innerHTML = "";
+  const t = new Date();
+  while (t.getDay() !== ROT_DAY) t.setDate(t.getDate() + 1);
+  for (let i = 0; i < 6; i++, t.setDate(t.getDate() + 7)) {
+    const c = choreFor(t), li = document.createElement("li");
+    li.innerHTML = `<small>${fmt(t)}:</small> `;
+    li.append(c ? c.text : "–");
+    $("upcoming").appendChild(li);
+  }
+
+  // How many times each chore actually lands this year
+  const counts = {};
+  for (const c of Object.values(scheduleYear(new Date().getFullYear()))) counts[c.id] = (counts[c.id] || 0) + 1;
+
+  $("poolCount").textContent = chores.length;
+  $("pool").innerHTML = "";
+  for (const c of chores) {
+    const li = document.createElement("li");
+    li.className = c.id === editingChore ? "editing" : "";
+    li.innerHTML = `<div class="info"><span></span><small>${seasonLabel(c)} · ønsket ${c.timesPerYear}×/år · blir ${counts[c.id] || 0}× i år</small></div><button class="edit" title="Rediger">✏️</button><button class="del" title="Slett">🗑</button>`;
+    li.querySelector("span").textContent = c.text;
+    li.querySelector(".edit").onclick = () => startChoreEdit(c);
+    li.querySelector(".del").onclick = () => {
+      if (!confirm(`Slette «${c.text}»?`)) return;
+      if (c.id === editingChore) stopChoreEdit();
+      post("/api/revolving/delete", { id: c.id });
+    };
+    $("pool").appendChild(li);
+  }
+}
+
+// Editing a rotating chore reuses the "add" form above the list
+let editingChore = null;
+
+function startChoreEdit(c) {
+  editingChore = c.id;
+  $("fText").value = c.text;
+  $("fTimes").value = c.timesPerYear;
+  $("fSeasons").querySelectorAll("input").forEach(i => i.checked = c.seasons.includes(i.value));
+  $("fSubmit").textContent = "Lagre endring";
+  $("fCancel").hidden = false;
+  $("addForm").classList.add("editing");
+  $("addForm").closest("details").open = true;
+  $("addForm").scrollIntoView({ behavior: "smooth", block: "center" });
+  $("fText").focus({ preventScroll: true });
+  renderSidebar();
+}
+
+function stopChoreEdit() {
+  editingChore = null;
+  $("addForm").reset();
+  $("fSubmit").textContent = "Legg til";
+  $("fCancel").hidden = true;
+  $("addForm").classList.remove("editing");
+  renderSidebar();
+}
+$("fCancel").onclick = stopChoreEdit;
+
+async function post(url, body) {
+  const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  if (!r.ok) return alert("Noe gikk galt – prøv igjen.");
+  chores = await r.json();
+  resetSchedule();
+  render();
+  renderSidebar();
+}
+
+$("addForm").onsubmit = e => {
+  e.preventDefault();
+  const seasons = [...$("fSeasons").querySelectorAll("input:checked")].map(i => i.value);
+  if (!seasons.length) return alert("Velg minst én sesong.");
+  const body = { text: $("fText").value, timesPerYear: +$("fTimes").value, seasons };
+  if (editingChore) {
+    post("/api/revolving/update", { id: editingChore, ...body });
+    stopChoreEdit();
+  } else {
+    post("/api/revolving", body);
+    $("fText").value = "";
+  }
+};
+
+// On wide screens the sidebar is docked and collapses; on small screens it slides over the page.
+const docked = () => matchMedia("(min-width: 1000px)").matches;
+function openMenu() {
+  if (docked()) { document.body.classList.remove("sideCollapsed"); pref("collapsed", "0"); }
+  else { $("sidebar").classList.add("open"); $("backdrop").classList.add("open"); }
+}
+function closeMenu() {
+  if (docked()) { document.body.classList.add("sideCollapsed"); pref("collapsed", "1"); }
+  else hideOverlay();
+}
+function hideOverlay() { $("sidebar").classList.remove("open"); $("backdrop").classList.remove("open"); }
+if (pref("collapsed") !== "0") document.body.classList.add("sideCollapsed"); // collapsed unless opened before
+$("openMenu").onclick = openMenu;
+$("closeMenu").onclick = closeMenu;
+$("backdrop").onclick = hideOverlay;
+
+/* ---------- Navigation ---------- */
+
+function goTo(d) { date = d; editing = null; render(); loadComments(); }
+const step = () => view === "week" ? 7 : 1;
+$("prev").onclick = () => goTo(addDays(date, -step()));
+$("next").onclick = () => goTo(addDays(date, step()));
+$("today").onclick = () => goTo(new Date());
+document.querySelectorAll("#viewSwitch button").forEach(b => b.onclick = () => {
+  view = b.dataset.view; pref("view", view); goTo(date);
+});
+
+$("shiftName").onchange = async () => {
+  if (!(await saveName(date, shift, $("shiftName").value))) return;
+  $("nameSaved").classList.add("show");
+  setTimeout(() => $("nameSaved").classList.remove("show"), 1500);
+};
+$("shiftName").onkeydown = e => { if (e.key === "Enter") $("shiftName").blur(); };
+
+/* ---------- PDF export: one A4 portrait page per week ---------- */
+
+function fillWeekSelect() {
+  const thisMonday = mondayOf(new Date());
+  for (let i = -4; i <= 26; i++) {
+    const m = addDays(thisMonday, i * 7);
+    const o = new Option(`Uke ${isoWeek(m)} (${fmt(m)} – ${fmt(addDays(m, 6))})${i === 0 ? " – denne uka" : ""}`, dateKey(m));
+    o.selected = i === 0;
+    o.monday = m;
+    $("pWeek").add(o);
+  }
+}
+
+// The printout uses the sheet's original rows (one signature each), plus the rotating chore.
+function printRows(d, s) {
+  const rows = plan.rows[DAYS[d.getDay()]][s].map(text => ({ text }));
+  if (d.getDay() === ROT_DAY && s === ROT_SHIFT) {
+    const c = choreFor(d);
+    if (c) rows.push({ text: c.text, rot: true });
+  }
+  return rows;
+}
+
+function weekPage(monday, exportedAt) {
+  const days = weekDays(monday);
+  const long = (d, year) => d.toLocaleDateString("no-NO", { day: "numeric", month: "long", ...(year && { year: "numeric" }) });
+  const cell = (d, s) => {
+    const who = names[dateKey(d)]?.[s] || "";
+    const rows = printRows(d, s).map(r =>
+      `<div class="t${r.rot ? " r" : ""}"><span>${r.rot ? "<b>↻ Rullerende:</b> " : ""}${esc(r.text)}</span><i class="sg"></i></div>`).join("");
+    return `<td><div class="nm">Navn <span>${esc(who)}</span></div>${rows}</td>`;
+  };
+  return `<div class="week"><div class="wk">
+    <div class="wkHead">
+      <h1>Ukeplan <small>daglige rutiner</small></h1>
+      <div class="range">Uke ${isoWeek(monday)} · ${long(days[0])} – ${long(days[6], true)}</div>
+    </div>
+    <div class="wkSub"><span>Skriv navnet ditt øverst i vakta, og signer med initialer i ruta når gjøremålet er gjort. <b>↻</b> = rullerende gjøremål.</span><span class="stamp">Eksportert ${exportedAt}</span></div>
+    <table>
+      <colgroup><col class="dc"><col class="c-Dag"><col class="c-Kveld"><col class="c-Natt"></colgroup>
+      <thead><tr><th></th>${SHIFTS.map(s => `<th>${s}</th>`).join("")}</tr></thead>
+      <tbody>${days.map(d => `<tr><th>${DAYS[d.getDay()]}<small>${d.getDate()}.${d.getMonth() + 1}.</small></th>${SHIFTS.map(s => cell(d, s)).join("")}</tr>`).join("")}</tbody>
+    </table>
+    <div class="foot">
+      <div class="box"><h4>Ved behov</h4><div class="behov">${plan.asNeeded.map(t => `<span>${esc(t)} <i class="sg"></i></span>`).join("")}</div></div>
+      <div class="box"><h4>Merknader / avvik</h4><div class="lines"></div></div>
+    </div>
+  </div></div>`;
+}
+
+// Shrink the font on each week until it fits on one A4 portrait page (194 × 280 mm usable)
+function fitWeeks() {
+  const root = $("print"), maxH = 280 * 96 / 25.4;
+  root.classList.add("measure");
+  for (const wk of root.querySelectorAll(".wk")) {
+    let fs = 10;
+    wk.style.setProperty("--fs", fs + "pt");
+    while (wk.offsetHeight > maxH && fs > 4) wk.style.setProperty("--fs", (fs -= 0.25) + "pt");
+  }
+  root.classList.remove("measure");
+}
+
+$("pdfForm").onsubmit = async e => {
+  e.preventDefault();
+  names = await fetch("/api/names").then(r => r.json()); // latest names from colleagues
+  const start = $("pWeek").selectedOptions[0].monday;
+  const count = Math.max(1, Math.min(26, +$("pCount").value || 1));
+  const exportedAt = new Date().toLocaleString("no-NO", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  $("print").innerHTML = [...Array(count)].map((_, i) => weekPage(addDays(start, i * 7), exportedAt)).join("");
+  fitWeeks();
+  hideOverlay();
+  window.print();
+};
+
+/* ---------- Editing the fixed chores ---------- */
+
+let planHistory = [];
+const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0].map(i => DAYS[i]); // Mandag..Søndag
+const sectionKey = () => $("eDay").value === "asNeeded" ? "asNeeded" : `${$("eDay").value}|${$("eShift").value}`;
+const sectionLabel = k => k === "*" ? "Hele planen" : k === "asNeeded" ? "Ved behov" : k.replace("|", " · ");
+const sectionRows = k => k === "asNeeded" ? plan.asNeeded : plan.rows[k.split("|")[0]][k.split("|")[1]];
+
+function fillEditSelects() {
+  for (const d of WEEK_ORDER) $("eDay").add(new Option(d, d));
+  $("eDay").add(new Option("Ved behov", "asNeeded"));
+  for (const s of SHIFTS) $("eShift").add(new Option(s, s));
+  $("eDay").value = DAYS[date.getDay()];
+  $("eShift").value = shift;
+  $("eDay").onchange = $("eShift").onchange = renderEditor;
+}
+
+function addEditRow(text = "") {
+  const row = document.createElement("div");
+  row.className = "editRow";
+  row.innerHTML = `<textarea placeholder="Beskriv gjøremålet"></textarea><button type="button" title="Slett rad">🗑</button>`;
+  const area = row.querySelector("textarea");
+  area.value = text;
+  // Grow to fit the text in browsers without CSS field-sizing
+  const grow = () => { if (area.scrollHeight) { area.style.height = "auto"; area.style.height = Math.min(area.scrollHeight + 2, 260) + "px"; } };
+  if (!CSS.supports("field-sizing", "content")) { area.oninput = area.onfocus = grow; requestAnimationFrame(grow); }
+  row.querySelector("button").onclick = () => row.remove();
+  $("eRows").appendChild(row);
+  return row;
+}
+
+function renderEditor() {
+  const key = sectionKey();
+  $("eShiftWrap").hidden = key === "asNeeded";
+  $("eRows").innerHTML = "";
+  sectionRows(key).forEach(text => addEditRow(text));
+  $("editMsg").textContent = "";
+}
+
+function renderHistory() {
+  const KIND = { edit: "Endret", revert: "Angret en endring", reset: "Tilbakestilt til original" };
+  $("history").innerHTML = planHistory.length ? "" : '<li><small>Ingen endringer ennå.</small></li>';
+  for (const h of planHistory) {
+    const li = document.createElement("li");
+    const when = new Date(h.time).toLocaleString("no-NO", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+    li.innerHTML = `<div class="hHead"><a title="Åpne i redigering">${sectionLabel(h.key)}</a><button>Angre</button></div>
+      <small>${KIND[h.kind] || "Endret"} · ${when}</small><div class="diff"></div>`;
+    const diff = li.querySelector(".diff");
+    if (h.key === "*") {
+      diff.innerHTML = "<div>Hele planen ble satt tilbake til CSV-fila.</div>";
+    } else {
+      const line = (cls, sign, text) => { const d = document.createElement("div"); d.className = cls; d.title = text; d.textContent = sign + " " + text; diff.appendChild(d); };
+      h.before.filter(x => !h.after.includes(x)).forEach(t => line("del", "−", t));
+      h.after.filter(x => !h.before.includes(x)).forEach(t => line("add", "+", t));
+      if (!diff.children.length) line("", "", "Endret rekkefølge");
+    }
+    li.querySelector("a").onclick = () => {
+      if (h.key === "*") return;
+      if (h.key === "asNeeded") $("eDay").value = "asNeeded";
+      else [$("eDay").value, $("eShift").value] = h.key.split("|");
+      renderEditor();
+    };
+    li.querySelector("button").onclick = () => {
+      if (confirm(`Angre denne endringen på «${sectionLabel(h.key)}»?\n\nDen delen settes tilbake til slik den var før endringen.`))
+        planAction("revert", { id: h.id }, "Endringen er angret ✓");
+    };
+    $("history").appendChild(li);
+  }
+}
+
+async function planAction(action, body, message) {
+  const r = await fetch("/api/plan/" + action, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+  });
+  if (!r.ok) return alert("Noe gikk galt – prøv igjen.");
+  ({ plan, history: planHistory } = await r.json());
+  render();
+  renderEditor();
+  renderHistory();
+  $("editMsg").textContent = message;
+}
+
+$("eAdd").onclick = () => addEditRow().querySelector("textarea").focus();
+$("editForm").onsubmit = e => {
+  e.preventDefault();
+  const rows = [...$("eRows").querySelectorAll("textarea")].map(t => t.value);
+  planAction("edit", { key: sectionKey(), rows }, "Lagret ✓");
+};
+$("eReset").onclick = () => {
+  if (confirm("Sette alle faste gjøremål tilbake til originalen i CSV-fila?\n\nDette lagres også som en endring, så det kan angres."))
+    planAction("reset", {}, "Tilbakestilt ✓");
+};
+
+Promise.all(["/api/plan", "/api/revolving", "/api/names", "/api/plan/history"].map(u => fetch(u).then(r => r.json())))
+  .then(([p, c, n, h]) => {
+    plan = p; chores = c; names = n; planHistory = h;
+    fillWeekSelect(); fillEditSelects();
+    render(); renderSidebar(); renderEditor(); renderHistory(); loadComments();
+  });
+</script>
+</body>
+</html>
