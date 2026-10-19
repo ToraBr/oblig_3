@@ -75,12 +75,10 @@
     .editor { padding: 0 14px 14px 48px; display: grid; gap: 8px; }
     .editor textarea { width: 100%; min-height: 64px; padding: 8px 10px; border: 1px solid var(--line);
                        border-radius: 8px; background: var(--bg); color: var(--text); font: inherit; resize: vertical; }
-    .chips, .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
     .actions { justify-content: flex-end; }
     .editor button { padding: 6px 12px; border-radius: 99px; border: 1px solid var(--line);
                      background: var(--card); color: var(--text); cursor: pointer; font-size: .88rem; }
-    .chips button.on[data-s=partly] { background: var(--warn); border-color: var(--warn); color: #fff; }
-    .chips button.on[data-s=not] { background: var(--danger); border-color: var(--danger); color: #fff; }
     .editor .save { background: var(--accent); border-color: var(--accent); color: #fff; }
     li.empty { padding: 14px; color: var(--muted); }
     li.empty a { color: var(--rot); cursor: pointer; }
@@ -157,6 +155,20 @@
                          margin: 0 -6px; padding: 10px 6px; }
     #addForm.editing { border-color: var(--rot); box-shadow: 0 0 0 1px var(--rot); }
     #addForm .cancelEdit { background: none; color: var(--muted); border: 1px solid var(--line); font-weight: 400; }
+    /* TODO lists */
+    #todoNewForm button, .todoAdd button { background: var(--accent); }
+    ul.todoLists li { cursor: pointer; border-radius: 8px; }
+    ul.todoLists li.active { background: color-mix(in srgb, var(--accent) 14%, transparent); margin: 0 -6px; padding: 10px 6px; }
+    ul.todoLists .info span { font-weight: 600; }
+    .todoAdd { grid-template-columns: 1fr auto; margin-bottom: 14px; padding: 8px; background: var(--card); }
+    .todoAdd button { padding: 8px 16px; }
+    .dBtn { border: 0; background: none; cursor: pointer; padding: 14px 12px 14px 0; font-size: .95rem; opacity: .55; }
+    .dBtn:hover { opacity: 1; }
+    .todoFoot { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; flex-wrap: wrap; }
+    .todoFoot button { border: 1px solid var(--line); background: var(--card); color: var(--text);
+                       border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: .88rem; }
+    #todoDelete { color: var(--danger); }
+
     .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .editRow { display: flex; gap: 4px; align-items: flex-start; }
     .editRow textarea { flex: 1; min-height: 60px; max-height: 260px; padding: 6px 8px; border: 1px solid var(--line);
@@ -191,50 +203,50 @@
       body.sideCollapsed aside { transform: translateX(-100%); }
     }
 
-    /* ---------- Printable weeks: one A4 portrait page each ---------- */
+    /* ---------- Printable weeks: one A4 portrait page each, styled like the paper sheet ---------- */
     #print { display: none; }
     #print.measure { display: block; position: absolute; left: -99999px; top: 0; }
-    .week { width: 194mm; background: #fff; color: #1e293b; font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+    .week { width: 194mm; background: #fff; color: #000; font-family: Calibri, Carlito, "Segoe UI", Arial, sans-serif;
             -webkit-print-color-adjust: exact; print-color-adjust: exact;
-            --navy: #1f3a5f; --navy-soft: #e8eef5; --zebra: #f6f8fb; --rule: #c3cfdd; --teal: #0f766e; }
-    .wk { font-size: var(--fs, 8pt); line-height: 1.25; }
-    .wkHead { display: flex; justify-content: space-between; align-items: flex-end;
-              border-bottom: .8mm solid var(--navy); padding-bottom: 1.5mm; margin-bottom: 1.5mm; }
-    .wkHead h1 { margin: 0; font-size: 2.1em; color: var(--navy); letter-spacing: -.01em; }
-    .wkHead h1 small { font-size: .55em; font-weight: 400; color: #475569; margin-left: 2mm; }
-    .wkHead .range { font-size: 1.15em; font-weight: 600; color: var(--navy); }
-    .wkSub { color: #475569; margin-bottom: 2mm; display: flex; justify-content: space-between; gap: 4mm; }
-    .wkSub .stamp { white-space: nowrap; color: #64748b; }
-    .wkSub b { color: var(--teal); }
+            --dag: #e2efda; --kveld: #ddebf7; --natt: #ededed; --sign: #e3f1ec; --line: #7f7f7f; }
+    .wk { font-size: var(--fs, 8pt); line-height: 1.2; }
     .week table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-    .week th, .week td { border: .25mm solid var(--rule); vertical-align: top; padding: 1.1mm 1.3mm; text-align: left; }
-    .week thead th { background: var(--navy); color: #fff; font-size: 1.1em; letter-spacing: .02em;
-                     border-color: var(--navy); padding: 1.4mm 1.3mm; }
-    .week col.dc { width: 15mm; } .week col.c-Dag { width: 35%; } .week col.c-Kveld { width: 37%; }
-    .week tbody th { background: var(--navy-soft); color: var(--navy); }
-    .week tbody th small { display: block; font-weight: 400; color: #475569; }
-    .week tbody tr:nth-child(even) td { background: var(--zebra); }
-    .week .nm { display: flex; gap: 1.5mm; align-items: flex-end; color: #64748b; font-size: .9em;
-                margin-bottom: 1mm; }
-    .week .nm span { flex: 1; border-bottom: .25mm solid #94a3b8; min-height: 1.3em; color: #1e293b; font-size: 1.1em; }
-    .week .t { display: flex; gap: 1.5mm; align-items: flex-end; padding: .9mm 0;
-               border-top: .15mm dashed var(--rule); }
-    .week .t span { flex: 1; white-space: pre-line; }
-    .week .t.r span { border-left: .9mm solid var(--teal); padding-left: 1.2mm; }
-    .week .t.r b { color: var(--teal); }
-    .week i.sg { flex: none; position: relative; display: inline-block; width: 5.2em; height: 2.4em;
-                 border: .3mm solid var(--navy); border-radius: .8mm; background: #fff; }
-    .week i.sg::before { content: "Sign."; position: absolute; top: .15em; left: .3em; font-size: .6em;
-                         font-style: normal; color: #94a3b8; }
-    .week .foot { display: grid; grid-template-columns: 1fr 1fr; gap: 2mm; margin-top: 2mm; }
-    .week .box { border: .25mm solid var(--rule); border-radius: 1mm; padding: 1.3mm 1.6mm; background: var(--navy-soft); }
-    .week .box h4 { margin: 0 0 1mm; color: var(--navy); font-size: 1em; }
-    .week .behov { display: flex; flex-wrap: wrap; gap: 1mm 3mm; }
-    .week .behov span { display: inline-flex; gap: 1mm; align-items: center; }
-    .week .behov i.sg { width: 3.6em; height: 1.8em; }
-    .week .behov i.sg::before { content: ""; }
-    .week .lines { background: #fff; height: 12mm;
-                   background-image: repeating-linear-gradient(#fff 0 3.7mm, #cbd5e1 3.7mm 3.95mm); }
+    .week th, .week td { border: .2mm solid var(--line); padding: .5mm 1mm; text-align: left; vertical-align: top; }
+    .week col.c-day { width: 16mm; } .week col.c-shift { width: 17mm; } .week col.c-sign { width: 24mm; }
+    .week thead th { font-weight: 700; border-bottom: .5mm solid #000; padding: .8mm 1mm; }
+    .week thead th.uke { font-weight: 700; }
+    .week thead th.uke span { font-weight: 400; margin-left: 2mm; }
+    .week td.day { font-weight: 700; background: #fff; }
+    .week td.day small { display: block; font-weight: 400; color: #444; }
+    .week td.shift { background: #fff; }
+    .week td.task { white-space: pre-line; }
+    .week tr.Dag td.task { background: var(--dag); }
+    .week tr.Kveld td.task { background: var(--kveld); }
+    .week tr.Natt td.task { background: var(--natt); }
+    .week td.sign { background: var(--sign); }
+    .week td.task.rot b { font-weight: 700; }
+    .week tr.dayStart > td { border-top: .55mm solid #000; }
+    .week table { border-bottom: .55mm solid #000; }
+    .week .foot { display: flex; justify-content: space-between; align-items: flex-start; gap: 4mm; margin-top: 1.2mm; }
+    .week .behov { font-weight: 700; }
+    .week .stamp { white-space: nowrap; color: #666; font-size: .85em; }
+
+    /* Printable TODO list (flows over as many pages as needed; the header row repeats) */
+    .todoPage { width: 194mm; background: #fff; color: #000; font-family: Calibri, Carlito, "Segoe UI", Arial, sans-serif;
+                font-size: 10.5pt; line-height: 1.25; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .todoPage table { width: 100%; border-collapse: collapse; table-layout: fixed; border-bottom: .55mm solid #000; }
+    .todoPage th, .todoPage td { border: .2mm solid #7f7f7f; padding: 1.2mm 1.6mm; text-align: left; vertical-align: top; }
+    .todoPage col.c-cb { width: 8mm; } .todoPage col.c-cm { width: 36%; } .todoPage col.c-sign { width: 24mm; }
+    .todoPage th.title { font-size: 1.5em; border: 0; padding: 0 0 1.5mm; }
+    .todoPage th.title span { float: right; font-size: .55em; font-weight: 400; color: #444; margin-top: 2mm; }
+    .todoPage thead tr.cols th { background: #ddebf7; border-bottom: .5mm solid #000; }
+    .todoPage td.cb { text-align: center; font-size: 1.15em; padding: .8mm 0; }
+    .todoPage td.cm { white-space: pre-wrap; color: #333; }
+    .todoPage td.sign { background: #e3f1ec; }
+    .todoPage tbody tr:nth-child(even) td:not(.sign) { background: #f5f8fb; }
+    .todoPage tr.done td.task { color: #555; text-decoration: line-through; }
+    .todoPage tr { break-inside: avoid; page-break-inside: avoid; }
+    .todoPage .foot { display: flex; justify-content: space-between; margin-top: 1.5mm; font-size: .85em; color: #444; }
 
     @media print {
       @page { size: A4 portrait; margin: 8mm; }
@@ -249,6 +261,18 @@
 <body>
 <aside id="sidebar">
   <div class="sideHead">Meny <button id="closeMenu" title="Skjul meny" aria-label="Skjul meny">«</button></div>
+
+  <details open>
+    <summary>Lag en TODO</summary>
+    <p class="help">Egne lister som ikke er en del av ukeplanen. Alle som bruker appen ser dem.</p>
+    <form id="todoNewForm">
+      <label>Navn på lista
+        <input id="todoName" required maxlength="100" placeholder="F.eks. Juleforberedelser">
+      </label>
+      <button>Lag liste</button>
+    </form>
+    <ul class="pool todoLists" id="todoLists"></ul>
+  </details>
 
   <details open>
     <summary>Skriv ut / PDF</summary>
@@ -350,6 +374,21 @@
 
   <div id="weekView" hidden>
     <div class="weekGrid" id="weekGrid"></div>
+  </div>
+
+  <div id="todoView" hidden>
+    <form class="todoAdd" id="todoAddForm">
+      <input id="todoItemText" required maxlength="500" placeholder="Ny oppgave …" aria-label="Ny oppgave">
+      <button>Legg til</button>
+    </form>
+    <div class="progress"><div id="todoBar"></div></div>
+    <div class="status" id="todoStatus"></div>
+    <ul class="tasks" id="todoItems"></ul>
+    <div class="todoFoot">
+      <button id="todoPrint">🖨 Skriv ut / PDF</button>
+      <button id="todoRename">✏️ Gi lista nytt navn</button>
+      <button id="todoDelete">🗑 Slett lista</button>
+    </div>
   </div>
 </main>
 
@@ -494,28 +533,23 @@ function renderList(el, tasks, d) {
       render();
     };
     li.querySelector(".cBtn").onclick = () => { editing = editing === editKey ? null : editKey; render(); };
-    if (editing === editKey) li.appendChild(commentEditor(task, note, d));
+    if (editing === editKey) li.appendChild(commentEditor(note?.comment, c => saveComment(d, task, c, null)));
     el.appendChild(li);
   }
 }
 
-function commentEditor(task, note, d) {
-  let status = note?.status || null;
+// Comment box under a task; onSave gets the new text ("" removes the comment)
+function commentEditor(text, onSave) {
   const ed = document.createElement("div");
   ed.className = "editor";
   ed.innerHTML = `
-    <div class="chips"><button data-s="partly">Delvis gjort</button><button data-s="not">Ikke gjort</button></div>
     <textarea placeholder="Hva ble gjort, eller hvorfor ble det ikke gjort?"></textarea>
-    <div class="actions">${note ? '<button class="del">Fjern</button>' : ""}<button class="cancel">Avbryt</button><button class="save">Lagre</button></div>`;
+    <div class="actions">${text ? '<button class="del">Fjern</button>' : ""}<button class="cancel">Avbryt</button><button class="save">Lagre</button></div>`;
   const area = ed.querySelector("textarea");
-  area.value = note?.comment || "";
-  const chips = ed.querySelectorAll(".chips button");
-  const paint = () => chips.forEach(b => b.classList.toggle("on", b.dataset.s === status));
-  chips.forEach(b => b.onclick = () => { status = status === b.dataset.s ? null : b.dataset.s; paint(); });
-  paint();
+  area.value = text || "";
   ed.querySelector(".cancel").onclick = () => { editing = null; render(); };
-  ed.querySelector(".save").onclick = () => saveComment(d, task, area.value, status);
-  ed.querySelector(".del")?.addEventListener("click", () => saveComment(d, task, "", null));
+  ed.querySelector(".save").onclick = () => onSave(area.value);
+  ed.querySelector(".del")?.addEventListener("click", () => onSave(""));
   setTimeout(() => area.focus());
   return ed;
 }
@@ -556,7 +590,16 @@ function render() {
   $("main").classList.toggle("wide", view === "week");
   $("dayView").hidden = view !== "day";
   $("weekView").hidden = view !== "week";
+  $("todoView").hidden = view !== "todo";
+  $("tabs").hidden = $("prev").hidden = $("next").hidden = view === "todo";
   document.querySelectorAll("#viewSwitch button").forEach(b => b.classList.toggle("active", b.dataset.view === view));
+
+  if (view === "todo") {
+    $("today").textContent = "↺ I dag";
+    $("today").disabled = false;
+    $("today").title = "Tilbake til ukeplanen for i dag";
+    return renderTodo();
+  }
 
   // Title
   if (view === "day") {
@@ -742,10 +785,138 @@ function goTo(d) { date = d; editing = null; render(); loadComments(); }
 const step = () => view === "week" ? 7 : 1;
 $("prev").onclick = () => goTo(addDays(date, -step()));
 $("next").onclick = () => goTo(addDays(date, step()));
-$("today").onclick = () => goTo(new Date());
+$("today").onclick = () => {
+  if (view === "todo") { view = "day"; pref("view", view); renderTodoLists(); }
+  goTo(new Date());
+};
 document.querySelectorAll("#viewSwitch button").forEach(b => b.onclick = () => {
-  view = b.dataset.view; pref("view", view); goTo(date);
+  view = b.dataset.view; pref("view", view); renderTodoLists(); goTo(date);
 });
+
+/* ---------- Own TODO lists (separate from the weekly plan, shared via the server) ---------- */
+
+let todos = [], currentTodo = pref("todo");
+const openList = () => todos.find(l => l.id === currentTodo);
+
+async function todoOp(body) {
+  const r = await fetch("/api/todo", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  if (!r.ok) { alert("Noe gikk galt – prøv igjen."); return false; }
+  todos = await r.json();
+  if (view === "todo" && !openList()) { view = "day"; pref("view", view); } // the open list was deleted
+  render();
+  renderTodoLists();
+  return true;
+}
+
+function openTodo(id) {
+  currentTodo = id; view = "todo"; editing = null;
+  pref("todo", id); pref("view", view);
+  hideOverlay();
+  render();
+  renderTodoLists();
+}
+
+function renderTodoLists() {
+  const ul = $("todoLists");
+  ul.innerHTML = todos.length ? "" : '<li><small>Ingen lister ennå.</small></li>';
+  for (const l of todos) {
+    const done = l.items.filter(i => i.done).length;
+    const li = document.createElement("li");
+    li.className = view === "todo" && l.id === currentTodo ? "active" : "";
+    li.innerHTML = `<div class="info"><span></span><small>${done} av ${l.items.length} gjort</small></div>`;
+    li.querySelector("span").textContent = l.name;
+    li.onclick = () => openTodo(l.id);
+    ul.appendChild(li);
+  }
+}
+
+function renderTodo() {
+  const list = openList();
+  if (!list) { view = "day"; return render(); }
+  const done = list.items.filter(i => i.done).length;
+  $("dayName").textContent = list.name;
+  $("date").textContent = "Egen TODO-liste";
+  $("todoBar").style.width = (list.items.length ? done / list.items.length * 100 : 0) + "%";
+  $("todoStatus").textContent = `${done} av ${list.items.length} gjort`;
+
+  const ul = $("todoItems");
+  ul.innerHTML = list.items.length ? "" : '<li class="empty">Lista er tom – legg til en oppgave over.</li>';
+  for (const item of list.items) {
+    const editKey = "todo|" + item.id;
+    const li = document.createElement("li");
+    li.className = item.done ? "checked" : "";
+    li.innerHTML = `<div class="taskRow"><label><input type="checkbox"><span class="text"></span></label><button class="cBtn${item.comment ? " has" : ""}" title="Kommentar">💬</button><button class="dBtn" title="Slett oppgave">🗑</button></div>`;
+    li.querySelector(".text").textContent = item.text;
+    if (item.comment) {
+      const div = document.createElement("div");
+      div.className = "note";
+      div.textContent = item.comment;
+      li.appendChild(div);
+    }
+    const box = li.querySelector("input");
+    box.checked = item.done;
+    box.onchange = () => todoOp({ op: "updateItem", list: list.id, item: item.id, done: box.checked });
+    li.querySelector(".cBtn").onclick = () => { editing = editing === editKey ? null : editKey; render(); };
+    li.querySelector(".dBtn").onclick = () => {
+      if (confirm(`Slette «${item.text}»?`)) todoOp({ op: "deleteItem", list: list.id, item: item.id });
+    };
+    if (editing === editKey) li.appendChild(commentEditor(item.comment, async c => {
+      if (await todoOp({ op: "updateItem", list: list.id, item: item.id, comment: c })) { editing = null; render(); }
+    }));
+    ul.appendChild(li);
+  }
+}
+
+$("todoNewForm").onsubmit = async e => {
+  e.preventDefault();
+  const before = new Set(todos.map(l => l.id));
+  if (!(await todoOp({ op: "createList", name: $("todoName").value }))) return;
+  $("todoName").value = "";
+  const created = todos.find(l => !before.has(l.id));
+  if (created) openTodo(created.id);
+};
+$("todoAddForm").onsubmit = async e => {
+  e.preventDefault();
+  if (await todoOp({ op: "addItem", list: currentTodo, text: $("todoItemText").value })) {
+    $("todoItemText").value = "";
+    $("todoItemText").focus();
+  }
+};
+function todoPage(list, exportedAt) {
+  const done = list.items.filter(i => i.done).length;
+  const rows = list.items.map(i => `<tr class="${i.done ? "done" : ""}">
+      <td class="cb">${i.done ? "☑" : "☐"}</td><td class="task">${esc(i.text)}</td>
+      <td class="cm">${esc(i.comment || "")}</td><td class="sign"></td></tr>`).join("");
+  return `<div class="todoPage">
+    <table>
+      <colgroup><col class="c-cb"><col class="c-task"><col class="c-cm"><col class="c-sign"></colgroup>
+      <thead>
+        <tr><th class="title" colspan="4">${esc(list.name)}<span>TODO-liste</span></th></tr>
+        <tr class="cols"><th></th><th>Oppgave</th><th>Kommentar</th><th>Sign.</th></tr>
+      </thead>
+      <tbody>${rows || '<tr><td></td><td colspan="3">Lista er tom.</td></tr>'}</tbody>
+    </table>
+    <div class="foot"><span>${done} av ${list.items.length} gjort</span><span>Eksportert ${exportedAt}</span></div>
+  </div>`;
+}
+
+$("todoPrint").onclick = () => {
+  const list = openList();
+  if (!list) return;
+  const exportedAt = new Date().toLocaleString("no-NO", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  $("print").innerHTML = todoPage(list, exportedAt);
+  window.print();
+};
+
+$("todoRename").onclick = () => {
+  const name = prompt("Nytt navn på lista:", openList()?.name || "");
+  if (name && name.trim()) todoOp({ op: "renameList", list: currentTodo, name });
+};
+$("todoDelete").onclick = () => {
+  const list = openList();
+  if (list && confirm(`Slette hele lista «${list.name}» med ${list.items.length} oppgaver?`))
+    todoOp({ op: "deleteList", list: list.id });
+};
 
 $("shiftName").onchange = async () => {
   if (!(await saveName(date, shift, $("shiftName").value))) return;
@@ -780,26 +951,37 @@ function printRows(d, s) {
 function weekPage(monday, exportedAt) {
   const days = weekDays(monday);
   const long = (d, year) => d.toLocaleDateString("no-NO", { day: "numeric", month: "long", ...(year && { year: "numeric" }) });
-  const cell = (d, s) => {
-    const who = names[dateKey(d)]?.[s] || "";
-    const rows = printRows(d, s).map(r =>
-      `<div class="t${r.rot ? " r" : ""}"><span>${r.rot ? "<b>↻ Rullerende:</b> " : ""}${esc(r.text)}</span><i class="sg"></i></div>`).join("");
-    return `<td><div class="nm">Navn <span>${esc(who)}</span></div>${rows}</td>`;
-  };
+
+  // One table row per sheet row; the day and shift cells span their rows, like the paper sheet
+  const body = days.map(d => {
+    const shifts = SHIFTS.map(s => ({ s, rows: printRows(d, s) }));
+    shifts.forEach(x => { if (!x.rows.length) x.rows = [{ text: "" }]; });
+    const dayRows = shifts.reduce((n, x) => n + x.rows.length, 0);
+    let html = "", first = true;
+    for (const { s, rows } of shifts) {
+      rows.forEach((r, i) => {
+        html += `<tr class="${s}${first ? " dayStart" : ""}">`;
+        if (first) html += `<td class="day" rowspan="${dayRows}">${DAYS[d.getDay()]}<small>${d.getDate()}.${d.getMonth() + 1}.</small></td>`;
+        if (i === 0) html += `<td class="shift" rowspan="${rows.length}">${s}</td>`;
+        html += r.rot
+          ? `<td class="task rot"><b>↻ Rullerende:</b> ${esc(r.text)}</td>`
+          : `<td class="task">${esc(r.text)}</td>`;
+        html += `<td class="sign"></td></tr>`;
+        first = false;
+      });
+    }
+    return html;
+  }).join("");
+
   return `<div class="week"><div class="wk">
-    <div class="wkHead">
-      <h1>Ukeplan <small>daglige rutiner</small></h1>
-      <div class="range">Uke ${isoWeek(monday)} · ${long(days[0])} – ${long(days[6], true)}</div>
-    </div>
-    <div class="wkSub"><span>Skriv navnet ditt øverst i vakta, og signer med initialer i ruta når gjøremålet er gjort. <b>↻</b> = rullerende gjøremål.</span><span class="stamp">Eksportert ${exportedAt}</span></div>
     <table>
-      <colgroup><col class="dc"><col class="c-Dag"><col class="c-Kveld"><col class="c-Natt"></colgroup>
-      <thead><tr><th></th>${SHIFTS.map(s => `<th>${s}</th>`).join("")}</tr></thead>
-      <tbody>${days.map(d => `<tr><th>${DAYS[d.getDay()]}<small>${d.getDate()}.${d.getMonth() + 1}.</small></th>${SHIFTS.map(s => cell(d, s)).join("")}</tr>`).join("")}</tbody>
+      <colgroup><col class="c-day"><col class="c-shift"><col class="c-task"><col class="c-sign"></colgroup>
+      <thead><tr><th>Ukeplan</th><th></th><th class="uke">Uke: ${isoWeek(monday)}<span>${long(days[0])} – ${long(days[6], true)}</span></th><th>Sign.</th></tr></thead>
+      <tbody>${body}</tbody>
     </table>
     <div class="foot">
-      <div class="box"><h4>Ved behov</h4><div class="behov">${plan.asNeeded.map(t => `<span>${esc(t)} <i class="sg"></i></span>`).join("")}</div></div>
-      <div class="box"><h4>Merknader / avvik</h4><div class="lines"></div></div>
+      <div class="behov">Ved behov: ${esc(plan.asNeeded.join(", "))}</div>
+      <div class="stamp">Eksportert ${exportedAt}</div>
     </div>
   </div></div>`;
 }
@@ -818,7 +1000,6 @@ function fitWeeks() {
 
 $("pdfForm").onsubmit = async e => {
   e.preventDefault();
-  names = await fetch("/api/names").then(r => r.json()); // latest names from colleagues
   const start = $("pWeek").selectedOptions[0].monday;
   const count = Math.max(1, Math.min(26, +$("pCount").value || 1));
   const exportedAt = new Date().toLocaleString("no-NO", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -921,11 +1102,12 @@ $("eReset").onclick = () => {
     planAction("reset", {}, "Tilbakestilt ✓");
 };
 
-Promise.all(["/api/plan", "/api/revolving", "/api/names", "/api/plan/history"].map(u => fetch(u).then(r => r.json())))
-  .then(([p, c, n, h]) => {
-    plan = p; chores = c; names = n; planHistory = h;
+Promise.all(["/api/plan", "/api/revolving", "/api/names", "/api/plan/history", "/api/todo"].map(u => fetch(u).then(r => r.json())))
+  .then(([p, c, n, h, t]) => {
+    plan = p; chores = c; names = n; planHistory = h; todos = t;
+    if (view === "todo" && !openList()) view = "day";
     fillWeekSelect(); fillEditSelects();
-    render(); renderSidebar(); renderEditor(); renderHistory(); loadComments();
+    render(); renderSidebar(); renderEditor(); renderHistory(); renderTodoLists(); loadComments();
   });
 </script>
 </body>

@@ -22,6 +22,7 @@ NAMES_FILE = DATA_DIR / "vakter.json"
 PLAN_FILE = DATA_DIR / "plan.json"
 HISTORY_FILE = DATA_DIR / "plan_historikk.json"
 HISTORY_SIZE = 10
+TODO_FILE = DATA_DIR / "todo.json"
 PORT = 8000
 
 DAYS = ["Mandag", "Tirsdag", "Onsdag", "Torsdag", "Fredag", "Lørdag", "Søndag"]
@@ -178,6 +179,57 @@ def save_names(names):
     NAMES_FILE.write_text(json.dumps(names, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def load_todos():
+    """Free-standing TODO lists: [{"id", "name", "items": [{"id", "text", "done", "comment"}]}]."""
+    if TODO_FILE.exists():
+        return json.loads(TODO_FILE.read_text(encoding="utf-8"))
+    return []
+
+
+def save_todos(lists):
+    TODO_FILE.write_text(json.dumps(lists, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def edit_todos(data):
+    """Apply one change ("op") to the TODO lists. Returns the lists, or None if the request is invalid."""
+    lists, op = load_todos(), data.get("op")
+    text = lambda key: str(data.get(key, "")).strip()[:500]
+    new_id = lambda: uuid.uuid4().hex[:8]
+
+    if op == "createList":
+        if not text("name"):
+            return None
+        lists.append({"id": new_id(), "name": text("name"), "items": []})
+    elif op == "deleteList":
+        lists = [l for l in lists if l["id"] != data.get("list")]
+    else:
+        todo = next((l for l in lists if l["id"] == data.get("list")), None)
+        if not todo:
+            return None
+        if op == "renameList" and text("name"):
+            todo["name"] = text("name")
+        elif op == "addItem" and text("text"):
+            todo["items"].append({"id": new_id(), "text": text("text"), "done": False, "comment": ""})
+        elif op in ("updateItem", "deleteItem"):
+            item = next((i for i in todo["items"] if i["id"] == data.get("item")), None)
+            if not item:
+                return None
+            if op == "deleteItem":
+                todo["items"].remove(item)
+            else:
+                if "done" in data:
+                    item["done"] = bool(data["done"])
+                if "comment" in data:
+                    item["comment"] = str(data["comment"]).strip()[:2000]
+                if "text" in data and text("text"):
+                    item["text"] = text("text")
+        else:
+            return None
+
+    save_todos(lists)
+    return lists
+
+
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT / "static"), **kwargs)
@@ -203,6 +255,8 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_json(load_names())
         elif url.path == "/api/plan/history":
             self.send_json(load_history())
+        elif url.path == "/api/todo":
+            self.send_json(load_todos())
         else:
             super().do_GET()
 
@@ -214,6 +268,9 @@ class Handler(SimpleHTTPRequestHandler):
             return self.save_comment(data)
         if self.path == "/api/names":
             return self.save_name(data)
+        if self.path == "/api/todo":
+            lists = edit_todos(data)
+            return self.send_json(lists) if lists is not None else self.send_json({"error": "Ugyldig endring"}, 400)
         if self.path.startswith("/api/plan/"):
             return self.edit_plan(self.path.removeprefix("/api/plan/"), data)
 
